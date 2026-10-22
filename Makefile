@@ -14,6 +14,7 @@ LIB_SRCS    := src/MathUtils.cpp \
                src/Parser.cpp \
                src/Polynomial.cpp \
                src/Solver.cpp \
+               src/Token.cpp \
                src/Printer.cpp
 
 MAIN_SRC    := main.cpp
