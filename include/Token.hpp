@@ -38,48 +38,48 @@ public:
 	Token(Type type, size_t index, std::string value);
 	~Token();
 
-	inline Type getType()
+	inline Type getType() const
 	{
 		return this->type;
 	}
-	inline size_t getIndex()
+	inline size_t getIndex() const
 	{
 		return this->index;
 	}
-	inline const std::string &getValue()
+	inline const std::string &getValue() const
 	{
 		return this->value;
 	}
-	inline const size_t &getCursor()
+	inline size_t getCursor() const
 	{
 		return this->value.length() + this->index;
 	}
 
-	inline bool isTypeNum()
+	inline bool isTypeNum() const
 	{
 		return this->type == Type::NUM;
 	}
-	inline bool isTypeX()
+	inline bool isTypeX() const
 	{
 		return this->type == Type::X;
 	}
-	inline bool isTypeCaret()
+	inline bool isTypeCaret() const
 	{
 		return this->type == Type::CARET;
 	}
-	inline bool isTypePlus()
+	inline bool isTypePlus() const
 	{
 		return this->type == Type::PLUS;
 	}
-	inline bool isTypeMinus()
+	inline bool isTypeMinus() const
 	{
 		return this->type == Type::MINUS;
 	}
-	inline bool isTypeStart()
+	inline bool isTypeStart() const
 	{
 		return this->type == Type::STAR;
 	}
-	inline bool isTypeEqual()
+	inline bool isTypeEqual() const
 	{
 		return this->type == Type::EQUAL;
 	}

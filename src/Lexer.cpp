@@ -11,6 +11,8 @@
 /* ************************************************************************** */
 
 #include "Lexer.hpp"
+#include <cctype>
+
 Lexer::Lexer(/* args */)
 {
 }
@@ -25,12 +27,13 @@ std::vector<Token> Lexer::tokenize(const std::string &input)
 	size_t index = 0;
 	while (index < input.size())
 	{
-		if (std::isspace(input[index]))
+		if (std::isspace(static_cast<unsigned char>(input[index])))
 		{
 			index++;
 			continue;
 		}
 		Token token = Token::from(input, index);
+		tokens.push_back(token);
 		index = token.getCursor();
 	}
 	return tokens;
