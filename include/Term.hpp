@@ -10,8 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef LEXER_HPP
-#define LEXER_HPP
+#ifndef TERM_HPP
+#define TERM_HPP
 #include <iostream>
 #include <vector>
 
@@ -26,11 +26,11 @@ public:
 	Term(size_t exp, double coef);
 	~Term();
 
-	inline double getExp() const
+	inline size_t getExp() const
 	{
 		return this->exp;
 	}
-	inline size_t getCoef() const
+	inline double getCoef() const
 	{
 		return this->coef;
 	}

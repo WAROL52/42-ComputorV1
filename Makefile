@@ -12,6 +12,7 @@ LIB_SRCS    := src/MathUtils.cpp \
                src/Rational.cpp \
                src/Lexer.cpp \
                src/Parser.cpp \
+               src/Term.cpp \
                src/Polynomial.cpp \
                src/Solver.cpp \
                src/Token.cpp \
