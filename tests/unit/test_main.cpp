@@ -1,6 +1,4 @@
 #include "test.hpp"
-
-int main()
-{
-	return 0;
-}
+#include "test_lexer.cpp"
+#include "example_test.cpp"
+VTEST_MAIN()

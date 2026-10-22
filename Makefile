@@ -3,7 +3,7 @@ LIB         := libcomputor.a
 UNIT_BIN    := unit_tests
 
 CXX         := c++
-CXXFLAGS    := -Wall -Wextra -Werror -std=c++98 -Iinclude
+CXXFLAGS    := -Wall -Wextra -Werror -std=c++11 -Iinclude
 DEPFLAGS    := -MMD -MP
 
 OBJ_DIR     := obj
