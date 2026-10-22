@@ -2,8 +2,6 @@
 #include <cstddef>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
-#include <utility>
 #include <vector>
 
 #include "Parser.hpp"
@@ -210,34 +208,5 @@ VTEST_SUITE([]{
 		});
 	});
 
-	/* ------------------------------------------------------------------ *
-	 *  Failles relevees dans Term / Polynomial.                          *
-	 *  setTermsRight est encore ROUGE : il documente un bug du code de    *
-	 *  production, il n'est pas la pour le faire passer au vert.          *
-	 *  Les deux premiers verrouillent des defauts deja corriges.          *
-	 * ------------------------------------------------------------------ */
-	Vtest::describe("faille",[]{
-		Vtest::it("un coefficient décimal doit survivre à la lecture",[]{
-			// Regression : Term stocke coef en double (include/Term.hpp:22) mais
-			// getCoef() le rendait en size_t : 9.3 devenait 9.
-			Vtest::expect(coefOf(Term(0, 9.3))).toBe(9.3);
-		});
-
-		Vtest::it("un coefficient négatif doit rester un double",[]{
-			// Regression : getCoef() rendait un size_t, or convertir un double
-			// negatif en size_t est un comportement indefini (et -Wall -Wextra le
-			// signalait dans src/Term.cpp:32, "comparison of unsigned expression
-			// in '< 0' is always false").
-			Vtest::expect(std::is_same<decltype(std::declval<const Term &>().getCoef()), double>::value).toBe(true);
-		});
-
-		Vtest::it("setTermsRight doit écrire le membre droit",[]{
-			// Faille : Polynomial::setTermsRight ecrit termsLeft
-			// (include/Polynomial.hpp:31-34). Le membre gauche se retrouve donc
-			// ecrase et le droit reste vide.
-			Polynomial polynome;
-			polynome.setTermsRight(std::vector<Term>(1, Term(0, 5.0)));
-			Vtest::expect(polynome.getTermsRight().size()).toBe(std::size_t(1));
-		});
-	});
+	// Les tests de Term et Polynomial vivent dans test_polynomial.cpp.
 });
