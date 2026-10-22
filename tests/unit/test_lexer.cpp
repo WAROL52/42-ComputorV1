@@ -1,7 +1,25 @@
 #include "test.hpp"
+#include <cctype>
+#include <type_traits>
 
 namespace
 {
+
+/* Detection de l'accessibilite du constructeur de Token : le curseur d'un jeton
+   n'est coherent que si la valeur du jeton est exactement le texte source, ce que
+   seul Token::from() garantit. Un constructeur public permet de contourner cette
+   garantie, et le lexer (qui avance avec getCursor()) saute alors des caracteres
+   de la source en silence. */
+template <class T, class = void>
+struct isPubliclyConstructible : std::false_type
+{
+};
+
+template <class T>
+struct isPubliclyConstructible<T,
+	decltype(void(T(T::Type::NUM, std::size_t(0), std::string("0"))))> : std::true_type
+{
+};
 
 const char *typeName(Token::Type type)
 {
@@ -160,6 +178,76 @@ VTEST_SUITE([]{
 
 		Vtest::it("ne lève pas d'exception sur une entrée valide",[]{
 			Vtest::expect([]{ Lexer::tokenize("5"); }).Not().toThrow();
+		});
+	});
+
+	/* ------------------------------------------------------------------ *
+	 *  Failles relevees dans Token / Lexer.                              *
+	 *  Ces tests sont ROUGES : ils documentent des bugs du code de       *
+	 *  production, ils ne sont pas la pour les faire passer au vert.     *
+	 * ------------------------------------------------------------------ */
+	Vtest::describe("faille",[]{
+		Vtest::it("un Token doit être assignable, sinon std::sort ne compile pas",[]{
+			// Faille : les membres de Token sont const (include/Token.hpp:33-35),
+			// donc l'affectation implicite est supprimee. Consequence directe :
+			//   error: use of deleted function 'Token& Token::operator=(const Token&)'
+			// sur std::sort(std::vector<Token>) ET sur std::vector<Token>::erase.
+			// Or la "reduced form" du sujet doit imprimer les termes ranges par
+			// degre croissant (cf. tests/e2e/cases/01_two_roots.out) : le
+			// Polynomial va vouloir trier ses termes.
+			Vtest::expect(std::is_copy_assignable<Token>::value).toBe(true);
+			Vtest::expect(std::is_move_assignable<Token>::value).toBe(true);
+		});
+
+		Vtest::it("un Token ne doit pas être constructible librement",[]{
+			// Faille : Token::getCursor() vaut value.length() + index (include/Token.hpp:53),
+			// le curseur depend donc de la VALEUR du jeton et pas du texte qu'il
+			// represente. Or c'est exactement ce curseur qui fait avancer le lexer
+			// (src/Lexer.cpp:37). Cette coherence n'est garantie que par
+			// Token::from() ; un constructeur public permet de fabriquer un jeton
+			// qui ment, et le lexer saute alors des caracteres en silence.
+			// Exemple : Token(Token::Type::NUM, 0, "9.30") sur la source "9.3 * X^2"
+			// donne un curseur de 4 au lieu de 3 : le caractere suivant est saute.
+			Vtest::expect(isPubliclyConstructible<Token>::value).toBe(false);
+		});
+
+		Vtest::it("toute erreur du lexer doit être une std::runtime_error",[]{
+			// Faille : Token::from() leve std::out_of_range quand l'index sort de
+			// la chaine (src/Token.cpp:29), alors que toutes les autres erreurs du
+			// lexer sont des std::runtime_error. Un "catch (const std::runtime_error &)"
+			// ne rattrape donc pas celle-la : le programme meurt sur une exception
+			// non geree au lieu d'afficher "syntax error".
+			bool attrapeeCommeRuntimeError = false;
+			try
+			{
+				Token::from("", 0);
+			}
+			catch (const std::runtime_error &)
+			{
+				attrapeeCommeRuntimeError = true;
+			}
+			catch (const std::exception &)
+			{
+			}
+			Vtest::expect(attrapeeCommeRuntimeError).toBe(true);
+		});
+
+		Vtest::it("le lexer ne perd aucun caractère de la source",[]{
+			// Verrou de regression : le flux produit doit couvrir toute la source,
+			// chaque jeton occupant exactement le texte qui le represente.
+			const std::string source = "9.3 * X^2 + 4 * X^0 = 1 * X^0";
+			const std::vector<Token> tokens = Lexer::tokenize(source);
+			std::size_t curseur = 0;
+			for (std::size_t i = 0; i < tokens.size(); ++i)
+			{
+				const std::size_t debut = tokens[i].getIndex();
+				const std::size_t fin = tokens[i].getCursor();
+				Vtest::expect(source.substr(debut, fin - debut)).toBe(tokens[i].getValue());
+				for (std::size_t p = curseur; p < debut; ++p)
+					Vtest::expect(std::isspace(static_cast<unsigned char>(source[p])) != 0).toBe(true);
+				curseur = fin;
+			}
+			Vtest::expect(curseur).toBe(source.size());
 		});
 	});
 });

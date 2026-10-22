@@ -6,7 +6,7 @@
 /*   By: rrabetsy <rrabetsy@student.42antananari    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/22 15:33:32 by rrabetsy          #+#    #+#             */
-/*   Updated: 2026/10/22 15:39:38 by rrabetsy         ###   ########.fr       */
+/*   Updated: 2026/10/22 16:59:24 by rrabetsy         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,12 +30,13 @@ public:
 	};
 
 private:
-	const Type type;
-	const size_t index;
-	const std::string value;
+	Type type;
+	size_t index;
+	std::string value;
+	Token(Type type, size_t index, std::string value);
 
 public:
-	Token(Type type, size_t index, std::string value);
+	Token();
 	~Token();
 
 	inline Type getType() const

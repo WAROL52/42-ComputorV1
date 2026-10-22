@@ -6,7 +6,7 @@
 /*   By: rrabetsy <rrabetsy@student.42antananari    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/22 16:07:45 by rrabetsy          #+#    #+#             */
-/*   Updated: 2026/10/22 16:07:46 by rrabetsy         ###   ########.fr       */
+/*   Updated: 2026/10/22 17:01:21 by rrabetsy         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,10 @@ Token::Token(Type type, size_t index, std::string value)
 	: type(type), index(index), value(value)
 {
 }
+Token::Token()
+	: type(Type::NUM), index(0), value("")
+{
+}
 Token::~Token()
 {
 }
@@ -26,7 +30,7 @@ Token Token::from(const std::string &input, size_t index)
 {
 	if (index >= input.size())
 	{
-		throw std::out_of_range("Index out of string bounds.");
+		throw std::runtime_error("Index out of string bounds.");
 	}
 	if (std::isdigit(static_cast<unsigned char>(input[index])))
 	{
@@ -41,8 +45,7 @@ Token Token::from(const std::string &input, size_t index)
 		{
 			if (index + 1 >= input.size() || !std::isdigit(static_cast<unsigned char>(input[index + 1])))
 			{
-				throw std::runtime_error("Invalid number format at position "
-					+ std::to_string(index) + ": a decimal point must be followed by a digit.");
+				throw std::runtime_error("Invalid number format at position " + std::to_string(index) + ": a decimal point must be followed by a digit.");
 			}
 			numStr += input[index];
 			index++;
@@ -54,8 +57,7 @@ Token Token::from(const std::string &input, size_t index)
 		}
 		if (index < input.size() && input[index] == '.')
 		{
-			throw std::runtime_error("Invalid number format at position "
-				+ std::to_string(index) + ": multiple decimal points found.");
+			throw std::runtime_error("Invalid number format at position " + std::to_string(index) + ": multiple decimal points found.");
 		}
 		return Token(Type::NUM, start, numStr);
 	}
@@ -75,7 +77,6 @@ Token Token::from(const std::string &input, size_t index)
 	case '=':
 		return Token(Type::EQUAL, index, "=");
 	default:
-		throw std::runtime_error(std::string("Unknown character found: ") + c
-			+ " at position " + std::to_string(index));
+		throw std::runtime_error(std::string("Unknown character found: ") + c + " at position " + std::to_string(index));
 	}
 }
