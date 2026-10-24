@@ -6,7 +6,7 @@
 /*   By: rrabetsy <rrabetsy@student.42antananari    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/22 17:25:49 by rrabetsy          #+#    #+#             */
-/*   Updated: 2026/10/24 15:55:09 by rrabetsy         ###   ########.fr       */
+/*   Updated: 2026/10/24 18:19:35 by rrabetsy         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,12 +29,15 @@ Term::~Term()
 std::ostream &operator<<(std::ostream &os, const Term &term)
 {
 	int sign = 1;
-	if (term.getCoef() < 0)
+	double coef = term.getCoef();
+	if (coef == 0)
+		coef = 0;
+	if (coef < 0)
 	{
 		sign = -1;
 		os << "- ";
 	}
-	os << term.getCoef() * sign
+	os << coef * sign
 	   << " * X^"
 	   << term.getExp();
 	return os;
