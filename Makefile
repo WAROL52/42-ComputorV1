@@ -1,6 +1,7 @@
 NAME        := computor
 LIB         := libcomputor.a
 UNIT_BIN    := unit_tests
+UNIT_BONUS_BIN := unit_bonus_tests
 
 CXX         := c++
 CXXFLAGS    := -Wall -Wextra -Werror -std=c++11 -Iinclude
@@ -29,10 +30,14 @@ TEST_SRCS   := tests/unit/test_main.cpp \
                tests/unit/test_solver.cpp \
                tests/unit/test_printer.cpp
 
+BONUS_SRCS  := tests/unit/test_main.cpp \
+               tests/unit/test_parser_bonus.cpp
+
 LIB_OBJS    := $(LIB_SRCS:%.cpp=$(OBJ_DIR)/%.o)
 MAIN_OBJ    := $(MAIN_SRC:%.cpp=$(OBJ_DIR)/%.o)
 TEST_OBJS   := $(TEST_SRCS:%.cpp=$(OBJ_DIR)/%.o)
-DEPS        := $(LIB_OBJS:.o=.d) $(MAIN_OBJ:.o=.d) $(TEST_OBJS:.o=.d)
+BONUS_OBJS  := $(BONUS_SRCS:%.cpp=$(OBJ_DIR)/%.o)
+DEPS        := $(LIB_OBJS:.o=.d) $(MAIN_OBJ:.o=.d) $(TEST_OBJS:.o=.d) $(BONUS_OBJS:.o=.d)
 
 all: $(NAME)
 
@@ -45,6 +50,9 @@ $(LIB): $(LIB_OBJS)
 $(UNIT_BIN): $(TEST_OBJS) $(LIB)
 	$(CXX) $(CXXFLAGS) $(TEST_OBJS) $(LIB) -o $@
 
+$(UNIT_BONUS_BIN): $(BONUS_OBJS) $(LIB)
+	$(CXX) $(CXXFLAGS) $(BONUS_OBJS) $(LIB) -o $@
+
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< -o $@
@@ -52,20 +60,40 @@ $(OBJ_DIR)/%.o: %.cpp
 unit: $(UNIT_BIN)
 	./$(UNIT_BIN)
 
+unit_bonus: $(UNIT_BONUS_BIN)
+	./$(UNIT_BONUS_BIN)
+
 e2e: $(NAME)
-	@sh tests/e2e/run.sh ./$(NAME)
+	@sh tests/e2e/run.sh ./$(NAME) mandatory
+
+e2e_bonus: $(NAME)
+	@sh tests/e2e/run.sh ./$(NAME) bonus
 
 test: unit e2e
+
+test_bonus:
+	@fail=0; \
+	$(MAKE) unit_bonus || fail=1; \
+	$(MAKE) e2e_bonus || fail=1; \
+	exit $$fail
+
+test_all:
+	@fail=0; \
+	$(MAKE) unit || fail=1; \
+	$(MAKE) unit_bonus || fail=1; \
+	$(MAKE) e2e || fail=1; \
+	$(MAKE) e2e_bonus || fail=1; \
+	exit $$fail
 
 clean:
 	rm -rf $(OBJ_DIR)
 
 fclean: clean
-	rm -f $(NAME) $(LIB) $(UNIT_BIN)
+	rm -f $(NAME) $(LIB) $(UNIT_BIN) $(UNIT_BONUS_BIN)
 
 re: fclean
 	$(MAKE) all
 
 -include $(DEPS)
 
-.PHONY: all clean fclean re unit e2e test
+.PHONY: all clean fclean re unit unit_bonus e2e e2e_bonus test test_bonus test_all

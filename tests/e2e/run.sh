@@ -1,5 +1,8 @@
 #!/bin/sh
+# MODE : "all" (defaut), "mandatory" ou "bonus".
+# Les cas bonus sont ceux dont le nom de fichier finit par "_bonus".
 BIN="${1:-./computor}"
+MODE="${2:-all}"
 DIR="$(dirname "$0")/cases"
 pass=0
 fail=0
@@ -18,6 +21,16 @@ check() {
 
 for in_file in "$DIR"/*.in; do
 	name=$(basename "$in_file" .in)
+	is_bonus=0
+	case "$name" in
+		*_bonus) is_bonus=1 ;;
+	esac
+	if [ "$MODE" = "mandatory" ] && [ "$is_bonus" -eq 1 ]; then
+		continue
+	fi
+	if [ "$MODE" = "bonus" ] && [ "$is_bonus" -eq 0 ]; then
+		continue
+	fi
 	eq=$(cat "$in_file")
 	want_out=$(cat "$DIR/$name.out")
 	want_code=0

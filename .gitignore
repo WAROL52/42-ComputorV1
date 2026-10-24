@@ -2,3 +2,4 @@ obj/
 computor
 libcomputor.a
 unit_tests
+unit_bonus_tests

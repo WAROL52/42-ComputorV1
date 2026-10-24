@@ -174,22 +174,6 @@ VTEST_SUITE([]
 			expectTerm(termAt(polynome.getTermsRight(), 1), 4, 1);
 		});
 
-		// Vtest::it("rejette un nombre nu au milieu d'un membre",[]{
-		// 	Vtest::expect(thrownKind("5 * X^0 + 3 = 4 * X^0")).toBe("std::exception");
-		// });
-
-		// Vtest::it("rejette un nombre nu après un terme complet à droite",[]{
-		// 	expectThrows("5 * X^0 = 4 * X^0 + 3");
-		// });
-
-		// Vtest::it("rejette un nombre négatif nu à droite (cas spécial NUM seul)",[]{
-		// 	expectThrows("5 * X^0 = -4");
-		// });
-
-		Vtest::it("rejette un coefficient manquant",[]{
-			expectThrows("X^0 = 4 * X^0");
-		});
-
 		Vtest::it("rejette une étoile manquante",[]{
 			expectThrows("5 X^0 = 4 * X^0");
 		});
@@ -209,6 +193,68 @@ VTEST_SUITE([]
 		Vtest::it("rejette un double signe égal collé",[]{
 			expectThrows("5 * X^0 == 4 * X^0");
 		}); });
+
+		/* Les six équations du mandatory, telles quelles : elles servent de
+		   garde-fou au parseur avant même que le binaire complet n'existe. */
+		Vtest::describe("cas du sujet (mandatory)", []{
+			Vtest::it("lit l'équation à deux racines",[]{
+				Polynomial polynome = parse("5 * X^0 + 4 * X^1 - 9.3 * X^2 = 1 * X^0");
+				Vtest::expect(polynome.getTermsLeft().size()).toBe(std::size_t(3));
+				Vtest::expect(polynome.getTermsRight().size()).toBe(std::size_t(1));
+				expectTerm(termAt(polynome.getTermsLeft(), 0), 5, 0);
+				expectTerm(termAt(polynome.getTermsLeft(), 1), 4, 1);
+				expectTerm(termAt(polynome.getTermsLeft(), 2), -9.3, 2);
+				expectTerm(termAt(polynome.getTermsRight(), 0), 1, 0);
+			});
+
+			Vtest::it("lit l'équation de degré 1",[]{
+				Polynomial polynome = parse("5 * X^0 + 4 * X^1 = 4 * X^0");
+				Vtest::expect(polynome.getTermsLeft().size()).toBe(std::size_t(2));
+				Vtest::expect(polynome.getTermsRight().size()).toBe(std::size_t(1));
+				expectTerm(termAt(polynome.getTermsLeft(), 0), 5, 0);
+				expectTerm(termAt(polynome.getTermsLeft(), 1), 4, 1);
+				expectTerm(termAt(polynome.getTermsRight(), 0), 4, 0);
+			});
+
+			Vtest::it("lit l'équation de degré 3 avec un coefficient nul",[]{
+				// "0 * X^2" doit rester dans le membre gauche : la forme réduite
+				// attendue l'affiche ("+ 0 * X^2").
+				Polynomial polynome = parse("8 * X^0 - 6 * X^1 + 0 * X^2 - 5.6 * X^3 = 3 * X^0");
+				Vtest::expect(polynome.getTermsLeft().size()).toBe(std::size_t(4));
+				Vtest::expect(polynome.getTermsRight().size()).toBe(std::size_t(1));
+				expectTerm(termAt(polynome.getTermsLeft(), 0), 8, 0);
+				expectTerm(termAt(polynome.getTermsLeft(), 1), -6, 1);
+				expectTerm(termAt(polynome.getTermsLeft(), 2), 0, 2);
+				expectTerm(termAt(polynome.getTermsLeft(), 3), -5.6, 3);
+				expectTerm(termAt(polynome.getTermsRight(), 0), 3, 0);
+			});
+
+			Vtest::it("lit l'équation qui s'annule",[]{
+				Polynomial polynome = parse("6 * X^0 = 6 * X^0");
+				Vtest::expect(polynome.getTermsLeft().size()).toBe(std::size_t(1));
+				Vtest::expect(polynome.getTermsRight().size()).toBe(std::size_t(1));
+				expectTerm(termAt(polynome.getTermsLeft(), 0), 6, 0);
+				expectTerm(termAt(polynome.getTermsRight(), 0), 6, 0);
+			});
+
+			Vtest::it("lit l'équation sans solution",[]{
+				Polynomial polynome = parse("10 * X^0 = 15 * X^0");
+				Vtest::expect(polynome.getTermsLeft().size()).toBe(std::size_t(1));
+				Vtest::expect(polynome.getTermsRight().size()).toBe(std::size_t(1));
+				expectTerm(termAt(polynome.getTermsLeft(), 0), 10, 0);
+				expectTerm(termAt(polynome.getTermsRight(), 0), 15, 0);
+			});
+
+			Vtest::it("lit l'équation à discriminant négatif",[]{
+				Polynomial polynome = parse("1 * X^0 + 2 * X^1 + 5 * X^2 = 0");
+				Vtest::expect(polynome.getTermsLeft().size()).toBe(std::size_t(3));
+				Vtest::expect(polynome.getTermsRight().size()).toBe(std::size_t(1));
+				expectTerm(termAt(polynome.getTermsLeft(), 0), 1, 0);
+				expectTerm(termAt(polynome.getTermsLeft(), 1), 2, 1);
+				expectTerm(termAt(polynome.getTermsLeft(), 2), 5, 2);
+				expectTerm(termAt(polynome.getTermsRight(), 0), 0, 0);
+			});
+		});
 
 				// Les tests de Term et Polynomial vivent dans test_polynomial.cpp.
 			});
