@@ -1,10 +1,10 @@
 #include "test.hpp"
+#include "Parser.hpp"
 #include "Polynomial.hpp"
 #include "Term.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -31,6 +31,22 @@ std::string printed(const Polynomial &polynome)
 {
 	std::ostringstream out;
 	out << polynome;
+	return out.str();
+}
+
+Polynomial reducedFrom(const std::string &source)
+{
+	Polynomial polynome = Parser::parse(Lexer::tokenize(source));
+	polynome.reduce();
+	return polynome;
+}
+
+/* Equivalent C++ de formatReduced() des tests Node : uniquement le membre
+   gauche, sans le " = 0" ajoute par operator<<(Polynomial). */
+std::string reducedForm(const Polynomial &polynome)
+{
+	std::ostringstream out;
+	out << polynome.getTermsLeft();
 	return out.str();
 }
 
@@ -342,18 +358,12 @@ VTEST_SUITE([]{
 			Vtest::expect(polynome.getDegree()).toBe(std::size_t(0));
 		});
 
-		Vtest::it("exige une forme réduite",[]{
-			Polynomial polynome({Term(0, 5)}, {Term(0, 5)});
-			bool lance = false;
-			try
-			{
-				(void)polynome.getDegree();
-			}
-			catch (const std::logic_error &)
-			{
-				lance = true;
-			}
-			Vtest::expect(lance).toBe(true);
+		Vtest::it("n'exige pas une forme réduite",[]{
+			// Comme degree() côté Node : lecture du membre gauche seul, sans
+			// tri ni exigence d'ordre.
+			Polynomial polynome({Term(1, 4), Term(0, 1)}, std::vector<Term>());
+			Vtest::expect(polynome.isReduced()).toBe(false);
+			Vtest::expect(polynome.getDegree()).toBe(std::size_t(1));
 		});
 	});
 
@@ -398,6 +408,112 @@ VTEST_SUITE([]{
 			polynome.reduce();
 			Vtest::expect(printed(polynome)).toBe("1 * X^0 + 2 * X^1 + 5 * X^2 = 0");
 			Vtest::expect(polynome.getDegree()).toBe(std::size_t(2));
+		});
+	});
+
+	/* ------------------------------------------------------------------ *
+	 *  Portage des tests Node/Vitest.                                     *
+	 *  reducedForm() imprime le membre gauche seul, comme formatReduced.  *
+	 * ------------------------------------------------------------------ */
+	Vtest::describe("reduce (portage node)",[]{
+		Vtest::it("soustrait le membre droit",[]{
+			std::vector<Term> expected;
+			expected.push_back(Term(0, 1));
+			expected.push_back(Term(1, 4));
+			Vtest::expect(reducedFrom("5 * X^0 + 4 * X^1 = 4 * X^0").getTermsLeft()).toEqual(expected);
+		});
+
+		Vtest::it("fusionne les puissances égales et trie",[]{
+			std::vector<Term> expected;
+			expected.push_back(Term(0, -1));
+			expected.push_back(Term(1, 5));
+			Vtest::expect(reducedFrom("2 * X^1 + 3 * X^1 = 1 * X^0").getTermsLeft()).toEqual(expected);
+		});
+
+		Vtest::it("affiche la forme réduite exacte du sujet",[]{
+			Vtest::expect(reducedForm(reducedFrom("5 * X^0 + 4 * X^1 - 9.3 * X^2 = 1 * X^0")))
+				.toBe("4 * X^0 + 4 * X^1 - 9.3 * X^2");
+		});
+	});
+
+	Vtest::describe("degree (portage node)",[]{
+		Vtest::it("prend le plus grand exposant non nul",[]{
+			Polynomial premier({Term(0, 5), Term(1, 0), Term(2, -9.3)}, std::vector<Term>());
+			Vtest::expect(premier.getDegree()).toBe(std::size_t(2));
+			Polynomial second({Term(0, 5), Term(1, 0)}, std::vector<Term>());
+			Vtest::expect(second.getDegree()).toBe(std::size_t(0));
+		});
+	});
+
+	Vtest::describe("revue (portage node)",[]{
+		Vtest::it("garde les coefficients nuls venus de l'entrée",[]{
+			Vtest::expect(reducedForm(reducedFrom("5 * X^0 - 6 * X^1 + 0 * X^2 - 5.6 * X^3 = 0 * X^0")))
+				.toBe("5 * X^0 - 6 * X^1 + 0 * X^2 - 5.6 * X^3");
+		});
+
+		Vtest::it("trie même si l'entrée est dans le désordre",[]{
+			Vtest::expect(reducedForm(reducedFrom("4 * X^2 + 1 * X^0 = 0 * X^0")))
+				.toBe("1 * X^0 + 4 * X^2");
+		});
+
+		Vtest::it("fusionne des deux côtés à la fois",[]{
+			Vtest::expect(reducedForm(reducedFrom("1 * X^2 + 2 * X^0 = 3 * X^2 + 4 * X^0")))
+				.toBe("-2 * X^0 - 2 * X^2");
+		});
+
+		Vtest::it("accepte un premier coefficient négatif",[]{
+			Vtest::expect(reducedForm(reducedFrom("1 * X^0 = 5 * X^0"))).toBe("-4 * X^0");
+		});
+
+		Vtest::it("affiche un coefficient nul quand tout s'annule",[]{
+			Vtest::expect(reducedForm(reducedFrom("5 * X^0 = 5 * X^0"))).toBe("0 * X^0");
+		});
+
+		Vtest::it("ne propage pas le bruit des flottants (soustraction)",[]{
+			Vtest::expect(reducedForm(reducedFrom("0.3 * X^0 = 0.1 * X^0"))).toBe("0.2 * X^0");
+		});
+
+		Vtest::it("ne propage pas le bruit des flottants (addition)",[]{
+			Vtest::expect(reducedForm(reducedFrom("0.1 * X^0 + 0.2 * X^0 = 0"))).toBe("0.3 * X^0");
+		});
+
+		Vtest::it("ne modifie pas l'ordre des termes",[]{
+			// Entrée non triée du test Node : getDegree() ne doit pas la trier.
+			Polynomial polynome({Term(1, 4), Term(0, 1)}, std::vector<Term>());
+			const std::vector<Term> avant = polynome.getTermsLeft();
+			Vtest::expect(polynome.getDegree()).toBe(std::size_t(1));
+			Vtest::expect(polynome.getTermsLeft()).toEqual(avant);
+		});
+
+		Vtest::it("conserve un coefficient nul qui s'annule au milieu",[]{
+			Vtest::expect(reducedForm(reducedFrom("5 * X^0 + 3 * X^1 = 3 * X^1")))
+				.toBe("5 * X^0 + 0 * X^1");
+		});
+
+		Vtest::it("nettoie le bruit flottant sur un exposant élevé",[]{
+			Vtest::expect(reducedForm(reducedFrom("0.3 * X^2 = 0.1 * X^2"))).toBe("0.2 * X^2");
+		});
+
+		Vtest::it("affiche un résultat flottant négatif proprement",[]{
+			Vtest::expect(reducedForm(reducedFrom("0.1 * X^0 = 0.3 * X^0"))).toBe("-0.2 * X^0");
+		});
+
+		Vtest::it("ramène à zéro une annulation flottante",[]{
+			Vtest::expect(reducedForm(reducedFrom("0.1 * X^1 + 0.2 * X^1 = 0.3 * X^1"))).toBe("0 * X^1");
+		});
+
+		Vtest::it("gère les grands coefficients",[]{
+			Vtest::expect(reducedForm(reducedFrom("1000000 * X^0 = 1 * X^0"))).toBe("999999 * X^0");
+		});
+
+		Vtest::it("calcule le degré d'un terme seul",[]{
+			Polynomial polynome({Term(3, 5)}, std::vector<Term>());
+			Vtest::expect(polynome.getDegree()).toBe(std::size_t(3));
+		});
+
+		Vtest::it("renvoie zéro quand tous les coefficients sont nuls",[]{
+			Polynomial polynome({Term(0, 0), Term(1, 0)}, std::vector<Term>());
+			Vtest::expect(polynome.getDegree()).toBe(std::size_t(0));
 		});
 	});
 

@@ -12,7 +12,6 @@
 
 #include "Polynomial.hpp"
 #include <algorithm>
-#include <stdexcept>
 
 namespace
 {
@@ -99,12 +98,10 @@ bool Polynomial::isReduced() const
 
 size_t Polynomial::getDegree() const
 {
-	if (!this->isReduced())
-		throw std::logic_error("Polynomial::getDegree: reduce() must be called first");
 	size_t degree = 0;
 	for (size_t i = 0; i < this->termsLeft.size(); ++i)
 	{
-		if (!isZero(this->termsLeft[i].getCoef()))
+		if (!isZero(this->termsLeft[i].getCoef()) && this->termsLeft[i].getExp() > degree)
 			degree = this->termsLeft[i].getExp();
 	}
 	return degree;

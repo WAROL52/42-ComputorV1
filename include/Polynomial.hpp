@@ -45,9 +45,9 @@ public:
 	   sont strictement croissants (forme triee, sans doublon, non vide). */
 	bool isReduced() const;
 
-	/* Degre de la forme reduite : plus grand exposant dont le coefficient
-	   n'est pas nul (au sens de l'epsilon de reduce). Lance std::logic_error
-	   si isReduced() est faux. */
+	/* Degre du membre gauche : plus grand exposant dont le coefficient n'est
+	   pas nul (au sens de l'epsilon de reduce). Ne trie rien et n'exige pas
+	   isReduced() ; appeler reduce() avant pour le degre de l'equation. */
 	size_t getDegree() const;
 };
 
