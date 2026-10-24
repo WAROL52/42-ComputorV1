@@ -44,6 +44,14 @@ public:
 	}
 };
 
+/* Ordre total pour std::sort : exposant croissant, puis coefficient. */
+bool operator<(const Term &lhs, const Term &rhs);
+bool operator>(const Term &lhs, const Term &rhs);
+bool operator<=(const Term &lhs, const Term &rhs);
+bool operator>=(const Term &lhs, const Term &rhs);
+bool operator==(const Term &lhs, const Term &rhs);
+bool operator!=(const Term &lhs, const Term &rhs);
+
 std::ostream &operator<<(std::ostream &os, const Term &term);
 std::ostream &operator<<(std::ostream &os, const std::vector<Term> &terms);
 

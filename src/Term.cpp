@@ -26,6 +26,38 @@ Term::~Term()
 {
 }
 
+bool operator<(const Term &lhs, const Term &rhs)
+{
+	if (lhs.getExp() != rhs.getExp())
+		return lhs.getExp() < rhs.getExp();
+	return lhs.getCoef() < rhs.getCoef();
+}
+
+bool operator==(const Term &lhs, const Term &rhs)
+{
+	return lhs.getExp() == rhs.getExp() && lhs.getCoef() == rhs.getCoef();
+}
+
+bool operator!=(const Term &lhs, const Term &rhs)
+{
+	return !(lhs == rhs);
+}
+
+bool operator>(const Term &lhs, const Term &rhs)
+{
+	return rhs < lhs;
+}
+
+bool operator<=(const Term &lhs, const Term &rhs)
+{
+	return !(rhs < lhs);
+}
+
+bool operator>=(const Term &lhs, const Term &rhs)
+{
+	return !(lhs < rhs);
+}
+
 std::ostream &operator<<(std::ostream &os, const Term &term)
 {
 	int sign = 1;
