@@ -6,7 +6,7 @@
 /*   By: rrabetsy <rrabetsy@student.42antananari    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/22 17:25:49 by rrabetsy          #+#    #+#             */
-/*   Updated: 2026/10/24 18:19:35 by rrabetsy         ###   ########.fr       */
+/*   Updated: 2026/10/24 19:18:03 by rrabetsy         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,15 +48,14 @@ std::ostream &operator<<(std::ostream &os, const std::vector<Term> &terms)
 	size_t i = 0;
 	for (const auto &term : terms)
 	{
+		double coef = term.getCoef();
+		if (coef == 0)
+			coef = 0;
 		if (i)
-		{
-			os << " ";
-			if (term.getCoef() >= 0)
-			{
-				os << "+ ";
-			}
-		}
-		os << term;
+			os << (coef < 0 ? " - " : " + ");
+		else if (coef < 0)
+			os << "-";
+		os << (coef < 0 ? -coef : coef) << " * X^" << term.getExp();
 		i++;
 	}
 	return os;
