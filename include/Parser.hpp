@@ -1,5 +1,6 @@
 #ifndef PARSER_HPP
 #define PARSER_HPP
+#include <stdexcept>
 #include "Polynomial.hpp"
 #include "Token.hpp"
 class Parser
@@ -10,7 +11,7 @@ private:
 public:
 	~Parser();
 	static Polynomial parse(const std::vector<Token> &tokens);
-	static Term parseTerm(const std::vector<Token> &tokens, size_t &cursor);
+	static bool parseTerm(const std::vector<Token> &tokens, size_t cursor, Term &term);
 };
 
 #endif

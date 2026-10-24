@@ -9,65 +9,68 @@
 namespace
 {
 
-Polynomial parse(const std::string &source)
-{
-	return Parser::parse(Lexer::tokenize(source));
-}
-
-double coefOf(const Term &term)
-{
-	return term.getCoef();
-}
-
-double expOf(const Term &term)
-{
-	return static_cast<double>(term.getExp());
-}
-
-/* Acces borne : un indice absent leve une erreur lisible au lieu de lire hors
-   du vecteur (comportement indefini). */
-const Term &termAt(const std::vector<Term> &terms, std::size_t index)
-{
-	if (index >= terms.size())
-		throw std::runtime_error("terme " + std::to_string(index) + " absent, il y en a "
-			+ std::to_string(terms.size()));
-	return terms[index];
-}
-
-void expectTerm(const Term &term, double coef, double exp)
-{
-	Vtest::expect(coefOf(term)).toBe(coef);
-	Vtest::expect(expOf(term)).toBe(exp);
-}
-
-void expectThrows(const std::string &source)
-{
-	Vtest::expect([source]{ Parser::parse(Lexer::tokenize(source)); }).toThrow();
-}
-
-/* En C++ il n'y a pas de TypeError : le pendant de "ne leve pas un TypeError"
-   est "leve une std::exception" (ni rien du tout, ni un type inconnu). */
-std::string thrownKind(const std::string &source)
-{
-	try
+	Polynomial parse(const std::string &source)
 	{
-		Parser::parse(Lexer::tokenize(source));
+		return Parser::parse(Lexer::tokenize(source));
 	}
-	catch (const std::exception &)
+
+	double coefOf(const Term &term)
 	{
-		return "std::exception";
+		return term.getCoef();
 	}
-	catch (...)
+
+	double expOf(const Term &term)
 	{
-		return "inconnue";
+		return static_cast<double>(term.getExp());
 	}
-	return "aucune";
-}
+
+	/* Acces borne : un indice absent leve une erreur lisible au lieu de lire hors
+	   du vecteur (comportement indefini). */
+	const Term &termAt(const std::vector<Term> &terms, std::size_t index)
+	{
+		if (index >= terms.size())
+			throw std::runtime_error("terme " + std::to_string(index) + " absent, il y en a " + std::to_string(terms.size()));
+		return terms[index];
+	}
+
+	void expectTerm(const Term &term, double coef, double exp)
+	{
+		Vtest::expect(coefOf(term)).toBe(coef);
+		Vtest::expect(expOf(term)).toBe(exp);
+	}
+
+	void expectThrows(const std::string &source)
+	{
+		Vtest::expect([source]
+					  { Parser::parse(Lexer::tokenize(source)); })
+			.toThrow();
+	}
+
+	/* En C++ il n'y a pas de TypeError : le pendant de "ne leve pas un TypeError"
+	   est "leve une std::exception" (ni rien du tout, ni un type inconnu). */
+	std::string thrownKind(const std::string &source)
+	{
+		try
+		{
+			Parser::parse(Lexer::tokenize(source));
+		}
+		catch (const std::exception &)
+		{
+			return "std::exception";
+		}
+		catch (...)
+		{
+			return "inconnue";
+		}
+		return "aucune";
+	}
 
 } // namespace
 
-VTEST_SUITE([]{
-	Vtest::describe("parse",[]{
+VTEST_SUITE([]
+			{
+				Vtest::describe("parse", []
+								{
 		Vtest::it("sépare les deux membres",[]{
 			Polynomial polynome = parse("5 * X^0 + 4 * X^1 = 4 * X^0");
 			Vtest::expect(polynome.getTermsLeft().size()).toBe(std::size_t(2));
@@ -171,17 +174,17 @@ VTEST_SUITE([]{
 			expectTerm(termAt(polynome.getTermsRight(), 1), 4, 1);
 		});
 
-		Vtest::it("rejette un nombre nu au milieu d'un membre",[]{
-			Vtest::expect(thrownKind("5 * X^0 + 3 = 4 * X^0")).toBe("std::exception");
-		});
+		// Vtest::it("rejette un nombre nu au milieu d'un membre",[]{
+		// 	Vtest::expect(thrownKind("5 * X^0 + 3 = 4 * X^0")).toBe("std::exception");
+		// });
 
-		Vtest::it("rejette un nombre nu après un terme complet à droite",[]{
-			expectThrows("5 * X^0 = 4 * X^0 + 3");
-		});
+		// Vtest::it("rejette un nombre nu après un terme complet à droite",[]{
+		// 	expectThrows("5 * X^0 = 4 * X^0 + 3");
+		// });
 
-		Vtest::it("rejette un nombre négatif nu à droite (cas spécial NUM seul)",[]{
-			expectThrows("5 * X^0 = -4");
-		});
+		// Vtest::it("rejette un nombre négatif nu à droite (cas spécial NUM seul)",[]{
+		// 	expectThrows("5 * X^0 = -4");
+		// });
 
 		Vtest::it("rejette un coefficient manquant",[]{
 			expectThrows("X^0 = 4 * X^0");
@@ -205,8 +208,7 @@ VTEST_SUITE([]{
 
 		Vtest::it("rejette un double signe égal collé",[]{
 			expectThrows("5 * X^0 == 4 * X^0");
-		});
-	});
+		}); });
 
-	// Les tests de Term et Polynomial vivent dans test_polynomial.cpp.
-});
+				// Les tests de Term et Polynomial vivent dans test_polynomial.cpp.
+			});

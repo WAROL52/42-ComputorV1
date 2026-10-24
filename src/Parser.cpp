@@ -6,7 +6,7 @@
 /*   By: rrabetsy <rrabetsy@student.42antananari    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/22 21:10:30 by rrabetsy          #+#    #+#             */
-/*   Updated: 2026/10/22 21:11:29 by rrabetsy         ###   ########.fr       */
+/*   Updated: 2026/10/24 16:19:47 by rrabetsy         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,11 +39,22 @@ Polynomial Parser::parse(const std::vector<Token> &tokens)
 				throw std::runtime_error("Unexpected '=' token");
 			if (termsLeft.size() == 0)
 				throw std::runtime_error("Left side of equation is empty");
+			if (i + 1 == tokens.size())
+				throw std::runtime_error("Left side of equation is empty");
 			terms = &termsRight;
+			terms->push_back(Term());
 			foundEqual = true;
 			continue;
 		}
-		terms->push_back(parseTerm(tokens, i));
+		if (i == 0)
+			terms->push_back(Term());
+		else if ((tokens[i].isTypePlus() || tokens[i].isTypeMinus()) && tokens[i - 1].isTypeNum())
+			terms->push_back(Term());
+
+		if (!parseTerm(tokens, i, terms->at(terms->size() - 1)))
+			throw std::runtime_error("Unexpected tokens");
+		if (i == tokens.size() - 1 && !tokens[i].isTypeNum())
+			throw std::runtime_error("Unexpected tokens");
 	}
 	if (!foundEqual)
 		throw std::runtime_error("Missing '=' token");
@@ -51,63 +62,95 @@ Polynomial Parser::parse(const std::vector<Token> &tokens)
 		throw std::runtime_error("Right side of equation is empty");
 	return Polynomial(termsLeft, termsRight);
 }
-Term Parser::parseTerm(const std::vector<Token> &tokens, size_t &cursor)
+
+bool isInclude(const std::vector<Token::Type> &types, Token::Type type)
+{
+	for (auto &&it : types)
+		if (it == type)
+			return true;
+	return false;
+}
+
+#define BEFORE_SIGN {Token::Type::NUM, Token::Type::EQUAL}
+#define BEFORE_NUM {Token::Type::PLUS, Token::Type::MINUS, Token::Type::CARET, Token::Type::EQUAL}
+#define BEFORE_STAR {Token::Type::NUM}
+#define BEFORE_X {Token::Type::STAR}
+#define BEFORE_CARET {Token::Type::X}
+#define BEFORE_EQUAL {Token::Type::NUM}
+
+bool Parser::parseTerm(const std::vector<Token> &tokens, size_t cursor, Term &term)
 {
 	if (cursor >= tokens.size())
 		throw std::runtime_error("Syntax error: Unexpected end of input while parsing term.");
-
-	double coefficient = 1.0;
-	int degree = 0;
-	int sign = 1;
-
-	if (tokens[cursor].isTypePlus() || tokens[cursor].isTypeMinus())
+	Token::Type tokenType = tokens[cursor].getType();
+	if (tokenType == Token::Type::NUM)
 	{
-		if (tokens[cursor].getType() == Token::Type::MINUS)
-			sign = -sign;
-		cursor++;
-
-		if (cursor >= tokens.size())
-			throw std::runtime_error("Syntax error: Expected a term or number after sign.");
-	}
-
-	// 2. Lecture du coefficient numérique optionnel (ex: 9.3)
-	bool hasCoeff = false;
-	if (tokens[cursor].getType() == Token::Type::NUM)
-	{
-		coefficient = std::stod(tokens[cursor].getValue());
-		hasCoeff = true;
-		cursor++;
-	}
-
-	// 3. Gestion de la variable (* X ^ 2)
-	if (cursor < tokens.size() && tokens[cursor].isTypeStart())
-	{
-		if (!hasCoeff)
-			throw std::runtime_error("Syntax error: Unexpected '*' without coefficient.");
-		cursor++;
-
-		if (cursor >= tokens.size() || tokens[cursor].getType() != Token::Type::X)
-			throw std::runtime_error("Syntax error: Expected variable 'X' after '*'.");
-	}
-
-	if (cursor < tokens.size() && tokens[cursor].isTypeX())
-	{
-		cursor++;
-		degree = 1;
-		if (cursor < tokens.size() && tokens[cursor].isTypeCaret())
+		if (cursor == 0)
 		{
-			cursor++;
-			if (cursor >= tokens.size() || tokens[cursor].getType() != Token::Type::NUM)
-				throw std::runtime_error("Syntax error: Expected an integer exponent after '^'.");
-
-			degree = std::stoi(tokens[cursor].getValue());
-			cursor++; // On passe le nombre de l'exposant
+			term.setCoef(std::stod(tokens[cursor].getValue()));
+			return true;
+		}
+		Token::Type prevTokenType = tokens[cursor - 1].getType();
+		if (prevTokenType == Token::Type::CARET)
+		{
+			for (auto &&c : tokens[cursor].getValue())
+				if (!std::isdigit(c))
+					return false;
+			term.setExp(std::stoul(tokens[cursor].getValue()));
+			return true;
+		}
+		if (prevTokenType == Token::Type::MINUS)
+		{
+			term.setCoef(-std::stod(tokens[cursor].getValue()));
+			return true;
+		}
+		if (isInclude(BEFORE_NUM, prevTokenType))
+		{
+			term.setCoef(std::stod(tokens[cursor].getValue()));
+			return true;
 		}
 	}
-	else if (!hasCoeff)
+	if (tokenType == Token::Type::PLUS)
 	{
-		throw std::runtime_error("Syntax error: Invalid term format.");
+		if (cursor == 0)
+			return true;
+		if (isInclude(BEFORE_SIGN, tokens[cursor - 1].getType()))
+			return true;
 	}
-
-	return Term(coefficient * sign, degree);
+	if (tokenType == Token::Type::MINUS)
+	{
+		if (cursor == 0)
+			return true;
+		if (isInclude(BEFORE_SIGN, tokens[cursor - 1].getType()))
+			return true;
+	}
+	if (tokenType == Token::Type::STAR)
+	{
+		if (cursor == 0)
+			return false;
+		if (isInclude(BEFORE_STAR, tokens[cursor - 1].getType()))
+			return true;
+	}
+	if (tokenType == Token::Type::X)
+	{
+		if (cursor == 0)
+			return false;
+		if (isInclude(BEFORE_X, tokens[cursor - 1].getType()))
+			return true;
+	}
+	if (tokenType == Token::Type::CARET)
+	{
+		if (cursor == 0)
+			return false;
+		if (isInclude(BEFORE_CARET, tokens[cursor - 1].getType()))
+			return true;
+	}
+	if (tokenType == Token::Type::EQUAL)
+	{
+		if (cursor == 0)
+			return false;
+		if (isInclude(BEFORE_EQUAL, tokens[cursor - 1].getType()))
+			return true;
+	}
+	return false;
 }

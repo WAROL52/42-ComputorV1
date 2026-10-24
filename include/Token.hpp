@@ -6,13 +6,13 @@
 /*   By: rrabetsy <rrabetsy@student.42antananari    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/22 15:33:32 by rrabetsy          #+#    #+#             */
-/*   Updated: 2026/10/22 16:59:24 by rrabetsy         ###   ########.fr       */
+/*   Updated: 2026/10/24 15:32:29 by rrabetsy         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef TOKEN_HPP
 #define TOKEN_HPP
-
+#include <stdexcept>
 #include <string>
 
 class Token
@@ -86,6 +86,32 @@ public:
 	}
 
 	static Token from(const std::string &input, size_t index = 0);
+	static inline std::string toString(const Token::Type &type, const std::string value = "0")
+	{
+		if (type == Type::CARET)
+			return "^";
+		if (type == Type::EQUAL)
+			return "=";
+		if (type == Type::MINUS)
+			return "-";
+		if (type == Type::NUM)
+			return value;
+		if (type == Type::PLUS)
+			return "+";
+		if (type == Type::STAR)
+			return "*";
+		if (type == Type::X)
+			return "X";
+		throw std::runtime_error("Token::type cont convertible");
+	}
+	static inline std::string toString(const Token &token)
+	{
+		return Token::toString(token.getType(), token.getValue());
+	}
+	inline std::string toString() const
+	{
+		return Token::toString(*this);
+	}
 };
 
 #endif

@@ -6,7 +6,7 @@
 /*   By: rrabetsy <rrabetsy@student.42antananari    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/22 17:25:49 by rrabetsy          #+#    #+#             */
-/*   Updated: 2026/10/22 18:50:48 by rrabetsy         ###   ########.fr       */
+/*   Updated: 2026/10/24 15:55:09 by rrabetsy         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,17 +43,17 @@ std::ostream &operator<<(std::ostream &os, const Term &term)
 std::ostream &operator<<(std::ostream &os, const std::vector<Term> &terms)
 {
 	size_t i = 0;
-	for (std::vector<Term>::const_iterator it = terms.begin(); it != terms.end(); ++it)
+	for (const auto &term : terms)
 	{
 		if (i)
 		{
 			os << " ";
-			if (it->getCoef() >= 0)
+			if (term.getCoef() >= 0)
 			{
 				os << "+ ";
 			}
 		}
-		os << *it;
+		os << term;
 		i++;
 	}
 	return os;

@@ -30,7 +30,7 @@ public:
 
 	inline void setTermsRight(const std::vector<Term> &term)
 	{
-		this->termsLeft = term;
+		this->termsRight = term;
 	}
 };
 
