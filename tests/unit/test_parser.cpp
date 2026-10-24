@@ -192,6 +192,37 @@ VTEST_SUITE([]
 
 		Vtest::it("rejette un double signe égal collé",[]{
 			expectThrows("5 * X^0 == 4 * X^0");
+		});
+
+		/* Bug constate : avant le '=', le parseur verifie seulement que le membre
+		   gauche n'est pas vide, pas qu'il se termine par un terme complet. Un
+		   operateur pendu fabrique un terme fantome (0 * X^0) et l'equation est
+		   acceptee : "5 * X^0 + = 4 * X^0" est lu 5 + 0 = 4. */
+		Vtest::it("rejette un opérateur pendant avant le signe égal",[]{
+			expectThrows("5 * X^0 + = 4 * X^0");
+		});
+
+		Vtest::it("rejette un membre gauche terminé par une étoile",[]{
+			expectThrows("5 * = 4 * X^0");
+		});
+
+		Vtest::it("rejette un membre gauche terminé par un accent circonflexe",[]{
+			expectThrows("5 * X^ = 4 * X^0");
+		});
+
+		Vtest::it("rejette un signe isolé avant le signe égal",[]{
+			expectThrows("- = 4 * X^0");
+		});
+
+		/* Bug constate : une deuxieme puissance dans le meme terme est acceptee
+		   et ecrase la premiere. "5 * X^0 * X^1" est lu 5 * X^1, et
+		   "4 * X^0 * X^1" a droite est lu 4 * X^1 au lieu d'etre rejete. */
+		Vtest::it("rejette deux puissances dans un même terme",[]{
+			expectThrows("5 * X^0 * X^1 = 0");
+		});
+
+		Vtest::it("rejette une puissance répétée dans un terme de droite",[]{
+			expectThrows("5 * X^0 = 4 * X^0 * X^1");
 		}); });
 
 		/* Les six équations du mandatory, telles quelles : elles servent de

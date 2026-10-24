@@ -43,8 +43,8 @@ VTEST_SUITE([]{
 		});
 
 		Vtest::it("range l'exposant puis le coefficient",[]{
-			// Term(size_t exp, double coef) : l'ordre est verrouille ici parce que
-			// Parser.cpp:112 l'inverse encore (cf. test_parser.cpp).
+			// Term(size_t exp, double coef) : l'ordre (exposant puis coefficient)
+			// est verrouille ici pour eviter une inversion silencieuse.
 			Term term(3, -2.5);
 			Vtest::expect(term.getExp()).toBe(std::size_t(3));
 			Vtest::expect(term.getCoef()).toBe(-2.5);
@@ -105,8 +105,9 @@ VTEST_SUITE([]{
 			Vtest::expect(printed(terms)).toBe("5 * X^0 - 4 * X^1");
 		});
 
-		Vtest::it("n'ajoute pas de séparateur avant le premier terme",[]{
-			Vtest::expect(printed(std::vector<Term>(1, Term(1, -4)))).toBe("- 4 * X^1");
+		Vtest::it("colle le signe au premier terme négatif",[]{
+			// Cas 05 du sujet : "Reduced form: -5 * X^0 = 0" (pas "- 5 * X^0").
+			Vtest::expect(printed(std::vector<Term>(1, Term(1, -4)))).toBe("-4 * X^1");
 		});
 
 		Vtest::it("imprime un vecteur vide comme une chaîne vide",[]{
@@ -151,6 +152,12 @@ VTEST_SUITE([]{
 			Vtest::expect(printed(polynome)).toBe("5 * X^0 + 4 * X^1 = 4 * X^0");
 		});
 
+		Vtest::it("imprime un coefficient nul au milieu comme le cas 03",[]{
+			// "0 * X^2" doit rester visible dans la forme reduite.
+			Polynomial polynome({Term(0, 5), Term(1, -6), Term(2, 0), Term(3, -5.6)}, std::vector<Term>());
+			Vtest::expect(printed(polynome)).toBe("5 * X^0 - 6 * X^1 + 0 * X^2 - 5.6 * X^3 = 0");
+		});
+
 		Vtest::it("imprime 0 pour un membre vide",[]{
 			Vtest::expect(printed(Polynomial())).toBe("0 = 0");
 			Vtest::expect(printed(Polynomial({Term(0, 5)}, std::vector<Term>()))).toBe("5 * X^0 = 0");
@@ -174,15 +181,35 @@ VTEST_SUITE([]{
 	});
 
 	/* ------------------------------------------------------------------ *
-	 *  Failles relevees dans Polynomial.                                  *
-	 *  Ce test est ROUGE : il documente un bug du code de production, il   *
-	 *  n'est pas la pour le faire passer au vert.                          *
+	 *  Format de la forme réduite : écarts avec les cas du sujet.         *
+	 *  Ces tests sont ROUGES : ils documentent des bugs de production.    *
+	 * ------------------------------------------------------------------ */
+	Vtest::describe("format (failles)",[]{
+		Vtest::it("colle le signe au premier terme négatif (cas 05)",[]{
+			// Le sujet attend "Reduced form: -5 * X^0 = 0" (pas "- 5 * X^0").
+			Polynomial polynome({Term(0, -5)}, std::vector<Term>());
+			Vtest::expect(printed(polynome)).toBe("-5 * X^0 = 0");
+		});
+
+		Vtest::it("imprime un zéro négatif comme zéro",[]{
+			// "- 0 * X^2" est une entrée valide. Aujourd'hui l'opérateur produit
+			// "+ -0 * X^2", qui n'est même pas re-parseable (double signe).
+			Vtest::expect(printed(Polynomial({Term(0, 5), Term(2, -0.0)}, std::vector<Term>())))
+				.toBe("5 * X^0 + 0 * X^2 = 0");
+			Vtest::expect(printed(Polynomial({Term(0, -0.0)}, std::vector<Term>())))
+				.toBe("0 * X^0 = 0");
+		});
+	});
+
+	/* ------------------------------------------------------------------ *
+	 *  Anciennes failles de Polynomial.                                    *
+	 *  setTermsRight est corrige : ce test sert de garde de regression.    *
 	 * ------------------------------------------------------------------ */
 	Vtest::describe("faille",[]{
 		Vtest::it("setTermsRight doit écrire le membre droit",[]{
-			// Faille : Polynomial::setTermsRight ecrit termsLeft
-			// (include/Polynomial.hpp:33) : le membre gauche est ecrase et le
-			// droit garde ses anciennes valeurs.
+			// Regression : Polynomial::setTermsRight ecrivait termsLeft
+			// (include/Polynomial.hpp:33) : le membre gauche etait ecrase et le
+			// droit gardait ses anciennes valeurs.
 			Polynomial polynome({Term(0, 5)}, {Term(1, 4)});
 			polynome.setTermsRight(std::vector<Term>(1, Term(9, 9)));
 			Vtest::expect(polynome.getTermsRight().size()).toBe(std::size_t(1));

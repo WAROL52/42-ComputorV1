@@ -182,14 +182,13 @@ VTEST_SUITE([]{
 	});
 
 	/* ------------------------------------------------------------------ *
-	 *  Failles relevees dans Token / Lexer.                              *
-	 *  Ces tests sont ROUGES : ils documentent des bugs du code de       *
-	 *  production, ils ne sont pas la pour les faire passer au vert.     *
+	 *  Anciennes failles de Token / Lexer.                                *
+	 *  Corrigées : ces tests servent maintenant de gardes de régression. *
 	 * ------------------------------------------------------------------ */
 	Vtest::describe("faille",[]{
 		Vtest::it("un Token doit être assignable, sinon std::sort ne compile pas",[]{
-			// Faille : les membres de Token sont const (include/Token.hpp:33-35),
-			// donc l'affectation implicite est supprimee. Consequence directe :
+			// Regression : les membres de Token etaient const, donc
+			// l'affectation implicite etait supprimee :
 			//   error: use of deleted function 'Token& Token::operator=(const Token&)'
 			// sur std::sort(std::vector<Token>) ET sur std::vector<Token>::erase.
 			// Or la "reduced form" du sujet doit imprimer les termes ranges par
@@ -200,23 +199,22 @@ VTEST_SUITE([]{
 		});
 
 		Vtest::it("un Token ne doit pas être constructible librement",[]{
-			// Faille : Token::getCursor() vaut value.length() + index (include/Token.hpp:53),
-			// le curseur depend donc de la VALEUR du jeton et pas du texte qu'il
-			// represente. Or c'est exactement ce curseur qui fait avancer le lexer
-			// (src/Lexer.cpp:37). Cette coherence n'est garantie que par
-			// Token::from() ; un constructeur public permet de fabriquer un jeton
-			// qui ment, et le lexer saute alors des caracteres en silence.
-			// Exemple : Token(Token::Type::NUM, 0, "9.30") sur la source "9.3 * X^2"
-			// donne un curseur de 4 au lieu de 3 : le caractere suivant est saute.
+			// Regression : Token::getCursor() vaut value.length() + index
+			// (include/Token.hpp:54-57), le curseur depend donc de la VALEUR du
+			// jeton et pas du texte qu'il represente. Or c'est exactement ce
+			// curseur qui fait avancer le lexer (src/Lexer.cpp:37). Cette
+			// coherence n'est garantie que par Token::from() ; un constructeur
+			// public permettait de fabriquer un jeton qui ment, et le lexer
+			// sautait alors des caracteres en silence.
 			Vtest::expect(isPubliclyConstructible<Token>::value).toBe(false);
 		});
 
 		Vtest::it("toute erreur du lexer doit être une std::runtime_error",[]{
-			// Faille : Token::from() leve std::out_of_range quand l'index sort de
-			// la chaine (src/Token.cpp:29), alors que toutes les autres erreurs du
-			// lexer sont des std::runtime_error. Un "catch (const std::runtime_error &)"
-			// ne rattrape donc pas celle-la : le programme meurt sur une exception
-			// non geree au lieu d'afficher "syntax error".
+			// Regression : Token::from() levait std::out_of_range quand l'index
+			// sortait de la chaine (src/Token.cpp:29), alors que toutes les
+			// autres erreurs du lexer sont des std::runtime_error. Un
+			// "catch (const std::runtime_error &)" ne rattrapait donc pas
+			// celle-la.
 			bool attrapeeCommeRuntimeError = false;
 			try
 			{

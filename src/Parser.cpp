@@ -6,7 +6,7 @@
 /*   By: rrabetsy <rrabetsy@student.42antananari    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/22 21:10:30 by rrabetsy          #+#    #+#             */
-/*   Updated: 2026/10/24 16:19:47 by rrabetsy         ###   ########.fr       */
+/*   Updated: 2026/10/24 17:37:19 by rrabetsy         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,8 +39,10 @@ Polynomial Parser::parse(const std::vector<Token> &tokens)
 				throw std::runtime_error("Unexpected '=' token");
 			if (termsLeft.size() == 0)
 				throw std::runtime_error("Left side of equation is empty");
-			if (i + 1 == tokens.size())
+			if (i + 1 == tokens.size() || i == 0)
 				throw std::runtime_error("Left side of equation is empty");
+			if (!tokens[i - 1].isTypeNum())
+				throw std::runtime_error("Unexpected '=' token");
 			terms = &termsRight;
 			terms->push_back(Term());
 			foundEqual = true;
@@ -96,6 +98,10 @@ bool Parser::parseTerm(const std::vector<Token> &tokens, size_t cursor, Term &te
 			for (auto &&c : tokens[cursor].getValue())
 				if (!std::isdigit(c))
 					return false;
+			if (tokens.size() > cursor + 1)
+				if (!isInclude({Token::Type::PLUS, Token::Type::MINUS, Token::Type::EQUAL}, tokens[cursor + 1].getType()))
+					return false;
+
 			term.setExp(std::stoul(tokens[cursor].getValue()));
 			return true;
 		}
@@ -126,7 +132,7 @@ bool Parser::parseTerm(const std::vector<Token> &tokens, size_t cursor, Term &te
 	}
 	if (tokenType == Token::Type::STAR)
 	{
-		if (cursor == 0)
+		if (cursor == 0 || tokens.size() == cursor + 1)
 			return false;
 		if (isInclude(BEFORE_STAR, tokens[cursor - 1].getType()))
 			return true;
